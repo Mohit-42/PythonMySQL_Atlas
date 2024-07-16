@@ -38,7 +38,7 @@ def upload_csv_to_mysql(csv_file, db_config, table_name):
         # Insert DataFrame data into MySQL table
         for i, row in df.iterrows():
             sql = f"""
-            INSERT INTO {table_name} (
+            INSERT IGNORE INTO {table_name} (
                 txn_id, last_modified_date, last_modified_date_bs, created_date, amount, status, 
                 module_id, product_id, product_type_id, payer_account_id, receiver_account_id, 
                 reward_point, cash_back_amount, revenue_amount, transactor_module_id, time
@@ -91,7 +91,7 @@ def create_hdfs_path_entity(csv_path):
             # Create HDFS path entity if it doesn't exist
             hdfs_entity = {
                 "entity": {
-                    "typeName": "hdfs_path",
+                    "typeName": "Path",
                     "attributes": {
                         "qualifiedName": csv_path,
                         "name": csv_path.split('/')[-1],  # Assuming file name as entity name
@@ -112,7 +112,7 @@ def create_process_entity(db_name, table_name, csv_path):
         # Create process entity for data lineage
         process_entity = {
             "entity": {
-                "typeName": "hive_process",
+                "typeName": "LoadProcess",
                 "attributes": {
                     "qualifiedName": f"load_csv_to_mysql@process",
                     "name": "load_csv_to_mysql",
@@ -126,7 +126,7 @@ def create_process_entity(db_name, table_name, csv_path):
                     "queryId": "12345",   # Placeholder query ID, adjust as needed
                     "inputs": [
                         {
-                            "typeName": "hdfs_path",
+                            "typeName": "Path",
                             "uniqueAttributes": {
                                 "qualifiedName": csv_path
                             }
@@ -139,7 +139,8 @@ def create_process_entity(db_name, table_name, csv_path):
                                 "qualifiedName": f"{table_name}@{db_name}@mysql"
                             }
                         }
-                    ]
+                    ],
+                    "queryGraph": ""  # Provide a valid query graph or remove if not needed
                 }
             }
         }
@@ -156,7 +157,7 @@ def create_mysql_entities(db_name, table_name, csv_path):
         # Create database entity
         db_entity = {
             "entity": {
-                "typeName": "hive_db",
+                "typeName": "DB",
                 "attributes": {
                     "qualifiedName": f"{db_name}@mysql",
                     "name": db_name,
@@ -174,8 +175,8 @@ def create_mysql_entities(db_name, table_name, csv_path):
                 "attributes": {
                     "qualifiedName": f"{table_name}@{db_name}@mysql",
                     "name": table_name,
-                    "db": {
-                        "typeName": "hive_db",
+                    "DB": {
+                        "typeName": "DB",
                         "uniqueAttributes": {
                             "qualifiedName": f"{db_name}@mysql"
                         }
@@ -197,13 +198,13 @@ def create_mysql_entities(db_name, table_name, csv_path):
 # MySQL database configuration
 db_config = {
     'user': 'root',
-    'password': 'G0t0h3!!',
+    'password': 'Password',
     'host': '127.0.0.1',
     'database': 'rw_transactions'
 }
 
 # CSV file path
-csv_file = '/home/gret/rw_transaction_data_11k.csv'  # Adjusted to absolute path
+csv_file = '/home/gret/rw_transactions_1M.csv'  # Adjusted to absolute path
 table_name = 'transaction'
 
 # Step 1: Upload CSV to MySQL
